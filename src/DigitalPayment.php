@@ -9,20 +9,16 @@ class DigitalPayment extends Payment
 {
     use ResultParser;
 
-    const PRODUCT_ID_SCAN = '0100';
-    const GOODS_INFO = 'goods_info';
-
     /**
      * DigitalPayment constructor.
      *
-     * @param string $orgId
      * @param string $merchantId
      * @param string $secretKey
      * @param null|string $baseApiUrl
      */
-    public function __construct($orgId, $merchantId, $secretKey, $baseApiUrl = null)
+    public function __construct($merchantId, $secretKey, $baseApiUrl = null)
     {
-        parent::__construct($orgId, $merchantId, $secretKey, $baseApiUrl);
+        parent::__construct($merchantId, $secretKey, $baseApiUrl);
     }
 
     /**
@@ -35,26 +31,23 @@ class DigitalPayment extends Payment
      * @param string $returnUrl
      * @return array
      */
-    public function order($tradeNo, $channel, $amount, $notifyUrl, $returnUrl)
+    public function order($tradeNo, $channel, $amount, $notifyUrl)
     {
-        // if (($channel === Channel::WECHAT) || ($channel === Channel::ALIPAY)) {
-        //     $channel = Channel::JDPAY;
-        // }
-        $businessData = [
-            'merno'     => $this->merchantId,
-            'bus_no'    => $channel,
-            'amount'    => $this->convertYuanToFen($amount),
-            'goods_info'=> self::GOODS_INFO,
-            'order_id'  => $tradeNo,
-            'return_url'=> $returnUrl,
-            'notify_url'=> $notifyUrl,
-        ];
+        
         $payload = $this->signPayload([
-            'businessData'        => json_encode($businessData),
-            'requestId'           => $tradeNo,
-            'productId'           => self::PRODUCT_ID_SCAN,
+            'merchantNo'          => $this->merchantId,
+            'orderTime'           => $this->getCurrentTime(),
+            'customerOrderNo'     => $tradeNo,
+            'amount'              => $this->convertYuanToFen($amount),
+            'subject'             => 'GOODS_SUBJECT',
+            'body'                => 'GOODS_BODY',
+            'payerIp'             => '127.0.0.1',
+            'payerAccountNo'      => '6217002430014693379',
+            'notifyUrl'           => $notifyUrl,
+            'channel'             => $channel,
+            'payType'             => CHANNEL::CHANNEL_PAYTYPE[$channel],
+            'signType'            =>'MD5'
         ]);
-
-        return $this->parseResponse($this->httpClient->post('trade/invoke', $payload));
+        return $this->parseResponse($this->httpClient->post('mas/mobile/create.do', $payload));
     }
 }

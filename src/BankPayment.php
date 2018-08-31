@@ -8,9 +8,6 @@ class BankPayment extends Payment
 {
     use ResultParser;
 
-    const PRODUCT_ID_BANK = '0500';
-    const GOODS_INFO = 'goods_info';
-
     /**
      * BankPayment constructor.
      *
@@ -33,33 +30,39 @@ class BankPayment extends Payment
      * @param string $returnUrl
      * @return string
      */
-    public function order($tradeNo, $bank, $amount, $notifyUrl, $returnUrl)
+    public function order($tradeNo, $bank, $amount, $notifyUrl)
     {
         $businessData = [
-            'merno'     => $this->merchantId,
-            'bus_no'    => '0499',
-            'amount'    => $this->convertYuanToFen($amount),
-            'goods_info'=> self::GOODS_INFO,
-            'order_id'  => $tradeNo,
-            'cardname' => $bank,
-            'bank_code' => Bank::BANK_CODE[$bank],
-            //'cardno'   => '1111111111',
-            'return_url'=> $returnUrl,
-            'notify_url'=> $notifyUrl,
-            'card_type' => 1,
-            'channelid' => 1,
+            'out_trade_no'       => $tradeNo,
+            'total_amount'       => $this->convertYuanToFen($amount),
+            'subject'            => 'GOODS_SUBJECT',
+            'body'               => 'GOODS_BODY',
+            'pay_type'           => 'DEBIT_CARD',
+            'channel'            => $bank,
+            'payer_ip'           => '127.0.0.1',
+            'referer_url'        => 'http://www.yahoo.com'
         ];
         $payload = $this->signPayload([
-            'businessData'        => json_encode($businessData),
-            'requestId'           => $tradeNo,
-            'productId'           => self::PRODUCT_ID_BANK,
+            'biz_content'        => json_encode($businessData),
+            'app_id'     => $this->merchantId,
+            'method'    => 'realpay.trade.ebankpay',
+            'format'     => 'JSON',
+            'charset'    => 'utf-8',
+            'timestamp'  => date('Ymd H:i:s'),//$this->getCurrentTime(),
+            'version'    => '1.0',
+            'notify_url' => $notifyUrl,
+            'sign_type'  => 'MD5'
         ]);
+
+        $response = $this->parseResponse($this->httpClient->formpost('mas/realpay/gateway.do', $payload));
         
-        $response = $this->parseResponse($this->httpClient->post('trade/invoke', $payload));
-        if (isset($response['result'])) 
+        if (isset($response['realpay_trade_create_ebank_pay_response']['pay_url']) && isset($response['realpay_trade_create_ebank_pay_response']['code'])) 
         {
-           $html = json_decode($response['result'],true)['url'];
-           return '<script> window.location = "'.$html.'"; </script>';
+           if ($response['realpay_trade_create_ebank_pay_response']['code'] == '0000') {
+            $url = $response['realpay_trade_create_ebank_pay_response']['pay_url'];
+            
+            return '<script> window.location = "'. $url .'"; </script>';
+           }
         }
 
         return null;

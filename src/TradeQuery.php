@@ -4,14 +4,14 @@ namespace Jetfuel\Ttfpay;
 
 use Jetfuel\Ttfpay\Traits\ResultParser;
 
+
+//只適用網銀
 class TradeQuery extends Payment
 {
     use ResultParser;
 
-    const PRODUCT_ID_QUERY = '9701';
-
     /**
-     * DigitalPayment constructor.
+     * TradeQuery constructor.
      *
      * @param string $merchantId
      * @param string $secretKey
@@ -31,24 +31,25 @@ class TradeQuery extends Payment
     public function find($tradeNo)
     {
         $businessData = [
-            'order_id'  => $tradeNo,
+            'out_trade_no'  => $tradeNo,
         ];
         $payload = $this->signPayload([
-            'businessData'        => json_encode($businessData),
-            'requestId'           => $tradeNo,
-            'productId'           => self::PRODUCT_ID_QUERY,
+            'biz_content'        => json_encode($businessData),
+            'app_id'     => $this->merchantId,
+            'method'    => 'realpay.trade.ebankquery',
+            'format'     => 'JSON',
+            'charset'    => 'utf-8',
+            'timestamp'  => date('Ymd H:i:s'),
+            'version'    => '1.0',
+            'sign_type'  => 'MD5'
         ]);
+
+        $order = $this->parseResponse($this->httpClient->formpost('mas/realpay/gateway.do', $payload));
         
-        $order = $this->parseResponse($this->httpClient->post('query/invoke', $payload));
-        
-        if ($order['key'] !== '00' && $order['key'] !== '05') {
+        if (!isset($order['realpay_trade_query_response']['code']) || $order['realpay_trade_query_response']['code'] !== '0000') {
             return null;
         }
 
-        $result = json_decode($order['result'], true);
-        $result['amount'] = $this->convertFenToYuan( $result['amount']);
-        $order['result'] = json_encode($result);
-        
         return $order;
     }
 
@@ -62,7 +63,8 @@ class TradeQuery extends Payment
     {
         $order = $this->find($tradeNo);
 
-        if ($order === null || !isset($order['result']) || json_decode($order['result'], true)['payment_status'] !=='1'  ) {
+        //付款成功才有 trade_status欄位
+        if ($order === null || !isset($order['realpay_trade_query_response']['code']) || $order['realpay_trade_query_response']['code'] !== '0000' || !isset($order['realpay_trade_query_response']['trade_status'])) {
             return false;
         }
 

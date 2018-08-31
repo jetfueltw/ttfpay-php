@@ -16,13 +16,13 @@ trait NotifyWebhook
      */
     public function verifyNotifyPayload(array $payload, $secretKey)
     {
-        if (!isset($payload['sign_data'])) {
+        if (!isset($payload['SignMsg'])) {
             return false;
         }
 
-        $signature = $payload['sign_data'];
+        $signature = $payload['SignMsg'];
 
-        unset($payload['sign_data']);
+        unset($payload['SignMsg']);
         
         return Signature::validate($payload, $secretKey, $signature);
     }
@@ -39,7 +39,7 @@ trait NotifyWebhook
         if (!$this->verifyNotifyPayload($payload, $secretKey)) {
             return null;
         }
-        $payload['amount'] = $this->convertFenToYuan($payload['amount']);
+        //$payload['amount'] = $this->convertFenToYuan($payload['amount']);
         return $payload;
     }
 
@@ -50,6 +50,6 @@ trait NotifyWebhook
      */
     public function successNotifyResponse()
     {
-        return '{"responseCode": "0000"}';
+        return 'ok';
     }
 }

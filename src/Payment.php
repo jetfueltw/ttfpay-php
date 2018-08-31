@@ -8,9 +8,7 @@ use Jetfuel\Ttfpay\Traits\ConvertMoney;
 class Payment
 {
     use ConvertMoney;
-    //const BASE_API_URL = 'http://118.31.38.147:18888/open-gateway/';
-   const BASE_API_URL = 'http://207.148.34.198:18888/open-gateway';
-   //const BASE_API_URL = 'https://www.txpays.com/open-gateway/';
+   const BASE_API_URL = 'https://www.zhizeng-pay.com/';
     const TIME_ZONE      = 'Asia/Shanghai';
     const TIME_FORMAT    = 'YmdHis';
 
@@ -47,9 +45,9 @@ class Payment
      * @param string $secretKey
      * @param null|string $baseApiUrl
      */
-    protected function __construct($orgId, $merchantId, $secretKey, $baseApiUrl = null)
+    protected function __construct($merchantId, $secretKey, $baseApiUrl = null)
     {
-        $this->orgId = $orgId;
+        //$this->orgId = $orgId;
         $this->merchantId = $merchantId;
         $this->secretKey = $secretKey;
         $this->baseApiUrl = $baseApiUrl === null ? self::BASE_API_URL : $baseApiUrl;
@@ -65,9 +63,10 @@ class Payment
      */
     protected function signPayload(array $payload)
     {
-        $payload['orgId'] = $this->orgId;
-        $payload['timestamp'] = $this->getCurrentTime();
-        $payload['signData'] = Signature::generate($payload, $this->secretKey);
+        //$payload['orgId'] = $this->orgId;
+        //$payload['timestamp'] = $this->getCurrentTime();
+        //$payload['signType'] = 'MD5';
+        $payload['sign'] = Signature::generate($payload, $this->secretKey);
 
         return $payload;
     }
