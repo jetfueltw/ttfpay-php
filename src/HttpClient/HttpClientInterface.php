@@ -27,5 +27,5 @@ interface HttpClientInterface
      * @param array $data
      * @return string
      */
-    public function post($uri, array $data);
+    public function post($uri, $data);
 }
