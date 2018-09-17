@@ -25,6 +25,7 @@ trait NotifyWebhook
         unset($payload['SignMsg']);
         
         return Signature::validate($payload, $secretKey, $signature);
+
     }
 
     /**
@@ -39,7 +40,7 @@ trait NotifyWebhook
         if (!$this->verifyNotifyPayload($payload, $secretKey)) {
             return null;
         }
-        //$payload['amount'] = $this->convertFenToYuan($payload['amount']);
+        
         return $payload;
     }
 
